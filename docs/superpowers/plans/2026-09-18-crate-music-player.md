@@ -1224,7 +1224,7 @@ Create `Tools/dump-metadata.swift`:
 // Throwaway check that AVMetadataLoader reads real tags. Not part of the app.
 import Foundation
 
-let root = "/Users/Matt/DJ TRACKS TRIÉES"
+let root = NSHomeDirectory() + "/Music/Crate Library"
 let fm = FileManager.default
 var checked = 0, withTitle = 0, withArtist = 0, withArt = 0
 
