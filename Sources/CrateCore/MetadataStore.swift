@@ -89,16 +89,27 @@ public actor MetadataStore {
     /// title and the other fields stay empty. Filenames are never parsed for an artist:
     /// a confidently wrong artist is worse than a blank one.
     public nonisolated static func display(track: Track, metadata: TrackMetadata) -> TrackDisplay {
-        func clean(_ s: String?) -> String? {
-            guard let t = s?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty
-            else { return nil }
-            return t
-        }
         return TrackDisplay(
-            title: clean(metadata.title) ?? track.filename,
-            artist: clean(metadata.artist) ?? "",
-            album: clean(metadata.album) ?? ""
+            title: visible(metadata.title) ?? visible(track.filename) ?? "Untitled",
+            artist: visible(metadata.artist) ?? "",
+            album: visible(metadata.album) ?? ""
         )
+    }
+
+    /// Trims a string and returns nil when nothing legible remains.
+    ///
+    /// Plain emptiness is not enough of a test. Some files carry titles built entirely
+    /// from bidi and zero-width marks, which are non-empty strings that draw nothing,
+    /// so a row using one appears blank. Those count as missing.
+    nonisolated static func visible(_ s: String?) -> String? {
+        guard let trimmed = s?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else { return nil }
+
+        let legible = trimmed.unicodeScalars.contains { scalar in
+            !scalar.properties.isDefaultIgnorableCodePoint
+                && !CharacterSet.whitespacesAndNewlines.contains(scalar)
+        }
+        return legible ? trimmed : nil
     }
 
     public nonisolated static func artworkSource(

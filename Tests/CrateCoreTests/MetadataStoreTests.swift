@@ -89,3 +89,25 @@ private func tempFile(_ name: String) throws -> URL {
     #expect(MetadataStore.artworkSource(
         for: track, metadata: TrackMetadata(hasEmbeddedArtwork: false)) == .folderCover(cover))
 }
+
+@Test func invisibleTagsCountAsMissing() {
+    // Real files in the collection carry titles built from bidi marks alone, which
+    // are non-empty strings that draw nothing.
+    let bidi = "\u{200F}\u{200F}\u{200E} \u{200E}"
+    let track = Track(url: URL(fileURLWithPath: "/m/Real Name.mp3"))
+    let d = MetadataStore.display(track: track, metadata: TrackMetadata(title: bidi))
+    #expect(d.title == "Real Name")
+}
+
+@Test func invisibleFilenameAndTagFallsBackToUntitled() {
+    let bidi = "\u{200F}\u{200F}\u{200E} \u{200E}"
+    let track = Track(url: URL(fileURLWithPath: "/m/\(bidi).mp3"))
+    let d = MetadataStore.display(track: track, metadata: TrackMetadata(title: bidi))
+    #expect(d.title == "Untitled")
+}
+
+@Test func legibleTitlesContainingBidiMarksSurvive() {
+    let track = Track(url: URL(fileURLWithPath: "/m/x.mp3"))
+    let d = MetadataStore.display(track: track, metadata: TrackMetadata(title: "\u{200E}Thrix"))
+    #expect(d.title.contains("Thrix"))
+}
