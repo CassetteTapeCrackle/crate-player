@@ -4,6 +4,18 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+INSTALL=0
+for arg in "$@"; do
+  case "$arg" in
+    --install) INSTALL=1 ;;
+    -h|--help)
+      echo "usage: ./build.sh [--install]"
+      echo "  --install   after building, replace /Applications/Crate.app"
+      exit 0 ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
 APP="build/Crate.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Fonts"
@@ -57,3 +69,41 @@ PLIST
 codesign --force --deep --sign - "$APP" 2>/dev/null
 
 echo "Built $APP"
+
+if [ "$INSTALL" -eq 1 ]; then
+  DEST="/Applications/Crate.app"
+  BUNDLE_ID=$(plutil -extract CFBundleIdentifier raw "$APP/Contents/Info.plist")
+
+  # Never delete something in /Applications that is not this app. If anything
+  # else is sitting at that path, stop and let a human decide.
+  if [ -e "$DEST" ]; then
+    EXISTING=$(plutil -extract CFBundleIdentifier raw "$DEST/Contents/Info.plist" 2>/dev/null || echo "")
+    if [ "$EXISTING" != "$BUNDLE_ID" ]; then
+      echo "Refusing to replace $DEST" >&2
+      echo "  expected identifier $BUNDLE_ID, found '${EXISTING:-none}'" >&2
+      exit 1
+    fi
+  fi
+
+  # A running copy holds its binary open, so quit it before overwriting and put
+  # it back afterwards if it was up.
+  WAS_RUNNING=0
+  if pgrep -f "$DEST/Contents/MacOS/Crate" >/dev/null 2>&1; then
+    WAS_RUNNING=1
+    osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
+    for _ in 1 2 3 4 5 6; do
+      pgrep -f "$DEST/Contents/MacOS/Crate" >/dev/null 2>&1 || break
+      sleep 0.5
+    done
+    pkill -f "$DEST/Contents/MacOS/Crate" >/dev/null 2>&1 || true
+  fi
+
+  rm -rf "$DEST"
+  cp -R "$APP" "$DEST"
+  echo "Installed $DEST"
+
+  if [ "$WAS_RUNNING" -eq 1 ]; then
+    open "$DEST"
+    echo "Relaunched"
+  fi
+fi
