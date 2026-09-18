@@ -7,6 +7,10 @@ struct CrateApp: App {
 
     /// The record mark as a template image, so macOS paints it to match the menu
     /// bar in either appearance instead of us guessing a colour.
+    ///
+    /// Main-actor isolated because NSImage is not Sendable and a static stored
+    /// property is a global.
+    @MainActor
     private static let menuBarIcon: NSImage = {
         guard let url = Bundle.main.url(forResource: "menubar", withExtension: "png"),
               let image = NSImage(contentsOf: url) else {
