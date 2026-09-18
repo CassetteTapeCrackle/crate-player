@@ -65,8 +65,22 @@ final class NowPlayingBridge {
         ]
 
         if let artwork {
+            // MediaPlayer calls this handler on its own queue to rasterise the
+            // artwork. Written inline here it would inherit this class's main-actor
+            // isolation, and the Swift 6 runtime enforces that: the queue assertion
+            // fails off the main thread and the process traps. Marking it @Sendable
+            // keeps the isolation off it.
+            //
+            // It also hands over Data rather than the NSImage. NSImage is not
+            // thread-safe, so sharing one instance with a background queue was
+            // unsound regardless of what the compiler had to say about it.
+            let size = artwork.size
+            let bitmap = artwork.tiffRepresentation
+            let handler: @Sendable (CGSize) -> NSImage = { requested in
+                bitmap.flatMap(NSImage.init(data:)) ?? NSImage(size: requested)
+            }
             payload[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(
-                boundsSize: artwork.size) { _ in artwork }
+                boundsSize: size, requestHandler: handler)
         }
 
         info.nowPlayingInfo = payload

@@ -18,3 +18,4 @@ build/
 auth.json
 .claude/settings.local.json
 build/release/
+build/checks/
