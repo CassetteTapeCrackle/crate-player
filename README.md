@@ -41,17 +41,23 @@ or network access of any kind.
 
 ### Download
 
-Grab `Crate-1.0.0.zip` from [the latest release](https://github.com/CassetteTapeCrackle/crate-player/releases/latest),
-unzip it, and move `Crate.app` to `/Applications`.
+From [the latest release](https://github.com/CassetteTapeCrackle/crate-player/releases/latest):
 
-macOS quarantines anything downloaded from the internet, so clear the flag once:
+- **`Crate-1.0.0.pkg`** installs it to `/Applications` for you.
+- **`Crate-1.0.0.zip`** is the bare app bundle, if you would rather place it yourself.
+
+Crate is ad-hoc signed rather than notarised, which needs a paid Apple Developer ID,
+so macOS quarantines the download either way. Clear it once:
 
 ```sh
+# if you took the .pkg
+xattr -d com.apple.quarantine ~/Downloads/Crate-1.0.0.pkg
+
+# if you took the .zip, after moving the app into place
 xattr -dr com.apple.quarantine /Applications/Crate.app
 ```
 
-The app is ad-hoc signed rather than notarised, so without that you get the
-"unverified developer" dialog. Right click and choose Open works too.
+Right clicking and choosing Open works too, for either one.
 
 ### Build it yourself
 
@@ -92,9 +98,10 @@ this app deliberately never asks for.
 ## Development
 
 ```sh
-./test.sh          # 42 unit tests over the pure logic
-./build.sh         # assemble build/Crate.app
-./build.sh --install   # ...and replace /Applications/Crate.app
+./test.sh                      # 42 unit tests over the pure logic
+./build.sh                     # assemble build/Crate.app
+./build.sh --install           # ...and replace /Applications/Crate.app
+./Tools/make-release.sh 1.0.0  # build and verify the .pkg and .zip
 ```
 
 Logic lives in `Sources/CrateCore` with no SwiftUI import, so it is testable without a
