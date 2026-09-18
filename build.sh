@@ -31,6 +31,7 @@ swiftc -O \
 
 cp Resources/DepartureMono-Regular.otf "$APP/Contents/Resources/Fonts/"
 cp Resources/Crate.icns "$APP/Contents/Resources/"
+cp Resources/menubar.png "$APP/Contents/Resources/"
 cp Resources/DepartureMono-LICENSE.txt "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'

@@ -1,9 +1,22 @@
+import AppKit
 import SwiftUI
 
 @main
 struct CrateApp: App {
     @State private var state = AppState()
-    @Environment(\.colorScheme) private var scheme
+
+    /// The record mark as a template image, so macOS paints it to match the menu
+    /// bar in either appearance instead of us guessing a colour.
+    private static let menuBarIcon: NSImage = {
+        guard let url = Bundle.main.url(forResource: "menubar", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return NSImage(systemSymbolName: "smallcircle.filled.circle",
+                           accessibilityDescription: "Crate") ?? NSImage()
+        }
+        image.isTemplate = true
+        image.size = NSSize(width: 18, height: 18)
+        return image
+    }()
 
     private var loopLabel: String {
         switch state.loopMode {
@@ -36,8 +49,10 @@ struct CrateApp: App {
             }
         }
 
-        MenuBarExtra("Crate", systemImage: "square.stack") {
-            MenuBarView(state: state, palette: Theme.palette(for: scheme))
+        MenuBarExtra {
+            MenuBarView(state: state)
+        } label: {
+            Image(nsImage: Self.menuBarIcon)
         }
         .menuBarExtraStyle(.window)
     }

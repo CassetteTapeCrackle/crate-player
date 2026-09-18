@@ -162,3 +162,68 @@ tmp.unlink()
 
 print(f"guards passed: {len(filled)} cells, {groove_cells} groove cells, symmetric")
 print("wrote Resources/icon.svg, Resources/Crate.icns, Resources/crate-logo.png")
+
+# ---------------------------------------------------------------- menu bar mark
+
+# The menu bar wants a template image: macOS reads only the alpha channel and
+# paints it black or white to match the bar, which is what makes it look native
+# in both appearances. So the record is drawn as a silhouette with the groove and
+# the spindle hole punched through, and colour is discarded.
+#
+# Its own 18-cell grid, because the menu bar renders at 18pt and the 32-cell grid
+# would land on half pixels and turn the groove to mush.
+NB = 18
+NB_CENTER = NB / 2
+NB_DISC = 8.5
+NB_GROOVE = 6            # one ring only; more than that closes up at this size
+NB_HOLE = 1              # half-width in cells, so a 2x2 hole
+
+
+def menubar_classify(c: int, r: int) -> str:
+    dx, dy = c + 0.5 - NB_CENTER, r + 0.5 - NB_CENTER
+    d = math.hypot(dx, dy)
+    if d > NB_DISC:
+        return "."
+    if max(abs(dx), abs(dy)) <= NB_HOLE:
+        return "."
+    if round(d) == NB_GROOVE:
+        return "."
+    return "#"
+
+
+GRID_MENUBAR = ["".join(menubar_classify(c, r) for c in range(NB)) for r in range(NB)]
+
+for r in range(NB):
+    for c in range(NB):
+        assert GRID_MENUBAR[r][c] == GRID_MENUBAR[r][NB - 1 - c], "menu bar mark not mirrored"
+        assert GRID_MENUBAR[r][c] == GRID_MENUBAR[NB - 1 - r][c], "menu bar mark not mirrored"
+assert any("." in row for row in GRID_MENUBAR), "groove did not punch through"
+assert GRID_MENUBAR[NB // 2][NB // 2] == ".", "spindle hole is filled in"
+
+
+def menubar_svg(px: int) -> str:
+    """Transparent ground, solid shape. Colour is irrelevant to a template image."""
+    cell = px / NB
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{px}" height="{px}" '
+             f'viewBox="0 0 {px} {px}" shape-rendering="crispEdges">']
+    for r, row in enumerate(GRID_MENUBAR):
+        c = 0
+        while c < NB:
+            if row[c] == ".":
+                c += 1
+                continue
+            start = c
+            while c < NB and row[c] == "#":
+                c += 1
+            parts.append(f'<rect x="{start * cell:g}" y="{r * cell:g}" '
+                         f'width="{(c - start) * cell:g}" height="{cell:g}" fill="#000000"/>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+tmp = root / "build/_menubar.svg"
+tmp.write_text(menubar_svg(36))
+subprocess.run(["rsvg-convert", "-w", "36", "-h", "36",
+                "-o", str(root / "Resources/menubar.png"), str(tmp)], check=True)
+tmp.unlink()
+print("wrote Resources/menubar.png (18pt template, 36px @2x)")

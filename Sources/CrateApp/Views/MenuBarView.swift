@@ -3,7 +3,11 @@ import CrateCore
 
 struct MenuBarView: View {
     @Bindable var state: AppState
-    let palette: Theme.Palette
+
+    /// Read here rather than passed in from the App scene. A Scene does not carry a
+    /// resolved colorScheme, so a palette chosen up there never follows the system.
+    @Environment(\.colorScheme) private var scheme
+    private var palette: Theme.Palette { Theme.palette(for: scheme) }
 
     private var display: TrackDisplay? {
         state.nowPlaying.map { state.display(for: $0) }
