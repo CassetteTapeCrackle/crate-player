@@ -30,6 +30,7 @@ swiftc -O \
   -o "$APP/Contents/MacOS/Crate"
 
 cp Resources/DepartureMono-Regular.otf "$APP/Contents/Resources/Fonts/"
+cp Resources/Crate.icns "$APP/Contents/Resources/"
 cp Resources/DepartureMono-LICENSE.txt "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
@@ -46,6 +47,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>ATSApplicationFontsPath</key><string>Fonts</string>
+  <key>CFBundleIconFile</key><string>Crate</string>
 </dict></plist>
 PLIST
 

@@ -5,22 +5,25 @@ enum Theme {
         let ground, chrome, sidebar, ink, dim, faint, rule, ruleStrong, selection, accent: Color
     }
 
-    /// Fixed by the approved design. Every text tier meets WCAG AA against its ground.
-    /// Do not adjust these without rechecking contrast.
+    /// The interface is strictly neutral greyscale. Brick appears only as the accent,
+    /// never tinted into a surface, so no background is a darker version of it.
+    /// Every text tier meets WCAG AA against every surface it sits on. Do not adjust
+    /// these without rechecking contrast.
     static let dark = Palette(
-        ground: .hex("0D0D0C"), chrome: .hex("131312"), sidebar: .hex("101010"),
-        ink: .hex("E7E7E4"), dim: .hex("8A8884"), faint: .hex("807E7A"),
-        rule: .hex("232322"), ruleStrong: .hex("333331"),
-        selection: .hex("1E1714"), accent: .hex("C0826A")
+        ground: .hex("0D0D0D"), chrome: .hex("141414"), sidebar: .hex("101010"),
+        ink: .hex("FFFFFF"), dim: .hex("8C8C8C"), faint: .hex("828282"),
+        rule: .hex("242424"), ruleStrong: .hex("353535"),
+        selection: .hex("1E1E1E"), accent: .hex("C0826A")
     )
 
     /// The light accent is darker than the dark-mode one because brick at C0826A
-    /// reaches only 3.7:1 on a light ground.
+    /// reaches only 3.7:1 on a light ground, and 914F37 also clears AA on the
+    /// selected-row background.
     static let light = Palette(
-        ground: .hex("F2F2F1"), chrome: .hex("E9E9E7"), sidebar: .hex("EDEDEB"),
-        ink: .hex("1A1A19"), dim: .hex("6B6A67"), faint: .hex("6E6D69"),
-        rule: .hex("DCDCDA"), ruleStrong: .hex("C2C2BF"),
-        selection: .hex("F0E4DE"), accent: .hex("9C563C")
+        ground: .hex("F2F2F2"), chrome: .hex("E9E9E9"), sidebar: .hex("EDEDED"),
+        ink: .hex("000000"), dim: .hex("565656"), faint: .hex("666666"),
+        rule: .hex("DCDCDC"), ruleStrong: .hex("C2C2C2"),
+        selection: .hex("E8E8E8"), accent: .hex("914F37")
     )
 
     static func palette(for scheme: ColorScheme) -> Palette {
