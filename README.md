@@ -43,15 +43,15 @@ or network access of any kind.
 
 From [the latest release](https://github.com/CassetteTapeCrackle/crate-player/releases/latest):
 
-- **`Crate-1.0.0.pkg`** installs it to `/Applications` for you.
-- **`Crate-1.0.0.zip`** is the bare app bundle, if you would rather place it yourself.
+- the **`.pkg`** installs it to `/Applications` for you.
+- the **`.zip`** is the bare app bundle, if you would rather place it yourself.
 
 Crate is ad-hoc signed rather than notarised, which needs a paid Apple Developer ID,
 so macOS quarantines the download either way. Clear it once:
 
 ```sh
 # if you took the .pkg
-xattr -d com.apple.quarantine ~/Downloads/Crate-1.0.0.pkg
+xattr -d com.apple.quarantine ~/Downloads/Crate-*.pkg
 
 # if you took the .zip, after moving the app into place
 xattr -dr com.apple.quarantine /Applications/Crate.app
@@ -101,7 +101,7 @@ this app deliberately never asks for.
 ./test.sh                      # 42 unit tests over the pure logic
 ./build.sh                     # assemble build/Crate.app
 ./build.sh --install           # ...and replace /Applications/Crate.app
-./Tools/make-release.sh 1.0.0  # build and verify the .pkg and .zip
+./Tools/make-release.sh 1.1.0  # build and verify the .pkg and .zip
 ```
 
 Logic lives in `Sources/CrateCore` with no SwiftUI import, so it is testable without a
