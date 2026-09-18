@@ -5,12 +5,36 @@ struct CrateApp: App {
     @State private var state = AppState()
     @Environment(\.colorScheme) private var scheme
 
+    private var loopLabel: String {
+        switch state.loopMode {
+        case .off: "Loop: Off"
+        case .folder: "Loop: Folder"
+        case .track: "Loop: Track"
+        }
+    }
+
     var body: some Scene {
         Window("Crate", id: "main") {
             ContentView(state: state)
                 .frame(minWidth: 880, minHeight: 460)
         }
         .windowResizability(.contentMinSize)
+        .commands {
+            // Command-modified so they never steal keys from the search field.
+            CommandMenu("Playback") {
+                Button(state.engine.isPlaying ? "Pause" : "Play") { state.togglePlayPause() }
+                    .keyboardShortcut("p", modifiers: .command)
+                Button("Next Track") { state.next() }
+                    .keyboardShortcut(.rightArrow, modifiers: .command)
+                Button("Previous Track") { state.previous() }
+                    .keyboardShortcut(.leftArrow, modifiers: .command)
+                Divider()
+                Button(loopLabel) { state.cycleLoop() }
+                    .keyboardShortcut("l", modifiers: .command)
+                Button(state.isShuffled ? "Shuffle: On" : "Shuffle: Off") { state.toggleShuffle() }
+                    .keyboardShortcut("u", modifiers: .command)
+            }
+        }
 
         MenuBarExtra("Crate", systemImage: "square.stack") {
             MenuBarView(state: state, palette: Theme.palette(for: scheme))
