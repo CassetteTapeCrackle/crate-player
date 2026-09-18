@@ -41,3 +41,18 @@ import Testing
     #expect(FuzzyMatcher.score(query: "gigi", candidate: "GiGi FM - Gabriella") != nil)
     #expect(FuzzyMatcher.score(query: "pepe burnt", candidate: "Pepe Bradock - Deep Burnt") != nil)
 }
+
+@Test func matchIsFoundEvenWhenTheOpeningLetterAppearsEarlierByChance() {
+    // Untagged files fall back to the whole filename, so the real match often sits
+    // well past a coincidental occurrence of the first character.
+    let hay = "EVIL GRIMACE - Après La Pluie -ALBUM- - 01 Après La Pluie"
+    let decoy = "Anticlockwise MIKROTAKT Presence LP"
+    #expect(FuzzyMatcher.score(query: "apres", candidate: hay)!
+            > FuzzyMatcher.score(query: "apres", candidate: decoy)!)
+}
+
+@Test func contiguousRunBeatsCharactersScatteredAcrossWordStarts() {
+    let tight = FuzzyMatcher.score(query: "abc", candidate: "abcdef")!
+    let scattered = FuzzyMatcher.score(query: "abc", candidate: "alpha bravo charlie")!
+    #expect(tight > scattered)
+}
