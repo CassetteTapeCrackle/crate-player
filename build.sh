@@ -16,6 +16,9 @@ for arg in "$@"; do
   esac
 done
 
+# The release script passes the version through so the bundle stops claiming 1.0.
+VERSION="${CRATE_VERSION:-1.0}"
+
 APP="build/Crate.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Fonts"
@@ -48,7 +51,7 @@ cp Resources/Crate.icns "$APP/Contents/Resources/"
 cp Resources/menubar.png "$APP/Contents/Resources/"
 cp Resources/DepartureMono-LICENSE.txt "$APP/Contents/Resources/"
 
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -57,7 +60,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleName</key><string>Crate</string>
   <key>CFBundleDisplayName</key><string>Crate</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>

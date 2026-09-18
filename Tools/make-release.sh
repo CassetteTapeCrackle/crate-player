@@ -21,7 +21,7 @@ OUT="build/release"
 WORK="build/release/work"
 IDENTIFIER="local.crate.player"
 
-./build.sh
+CRATE_VERSION="$VERSION" ./build.sh
 rm -rf "$OUT"
 mkdir -p "$WORK/resources"
 

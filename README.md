@@ -101,7 +101,7 @@ this app deliberately never asks for.
 ./test.sh                      # 42 unit tests over the pure logic
 ./build.sh                     # assemble build/Crate.app
 ./build.sh --install           # ...and replace /Applications/Crate.app
-./Tools/make-release.sh 1.0.1  # build and verify the .pkg and .zip
+./Tools/make-release.sh 1.0.2  # build and verify the .pkg and .zip
 ```
 
 Logic lives in `Sources/CrateCore` with no SwiftUI import, so it is testable without a
