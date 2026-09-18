@@ -26,6 +26,7 @@ final class AppState {
     let engine = AudioEngine()
     @ObservationIgnored let store: MetadataStore
     @ObservationIgnored let nowPlayingBridge = NowPlayingBridge()
+    @ObservationIgnored private var spaceMonitor: Any?
 
     /// The list the track view shows: search results when searching, otherwise the
     /// selected folder's own tracks.
@@ -53,6 +54,7 @@ final class AppState {
 
         wireEngine()
         wireMediaKeys()
+        wireSpaceBar()
 
         if let saved = defaults.url(forKey: "rootURL") {
             setRoot(saved)
@@ -153,6 +155,29 @@ final class AppState {
                 self.nowPlaying = nil
                 self.publishNowPlaying()
             }
+        }
+    }
+
+    /// Space toggles playback while Crate is frontmost, unless the caret is sitting in
+    /// a text field. The test is the window's first responder rather than SwiftUI focus
+    /// state, so it stays right however focus was acquired, and it leaves typing in the
+    /// search box alone.
+    private func wireSpaceBar() {
+        spaceMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Read what we need off the event before hopping. NSEvent is not Sendable,
+            // so it must not be captured across the isolation boundary.
+            let isPlainSpace = event.keyCode == 49
+                && event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty
+            guard isPlainSpace else { return event }
+
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let self, !(NSApp.keyWindow?.firstResponder is NSTextView) else {
+                    return false
+                }
+                self.togglePlayPause()
+                return true
+            }
+            return handled ? nil : event   // swallowing it avoids the beep
         }
     }
 

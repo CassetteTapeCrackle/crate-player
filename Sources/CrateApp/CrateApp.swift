@@ -58,20 +58,41 @@ struct CrateApp: App {
     }
 }
 
+/// Clears the window's initial first responder. SwiftUI hands it to the first text
+/// field on macOS, which would leave the search field armed from launch and swallow
+/// the space bar before anyone has clicked anything.
+private struct ReleaseInitialFocus: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        // The window is not attached yet on the first pass, so try again briefly.
+        for delay in [0.0, 0.05, 0.2] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                guard let window = view.window, window.firstResponder is NSTextView else { return }
+                window.makeFirstResponder(nil)
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 struct ContentView: View {
     @Bindable var state: AppState
     @Environment(\.colorScheme) private var scheme
     @State private var showingSettings = false
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         let p = Theme.palette(for: scheme)
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 SidebarView(state: state, palette: p, showingSettings: $showingSettings)
+                    .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
                 Rectangle().fill(p.rule).frame(width: 1)
                 VStack(spacing: 0) {
                     HStack(spacing: 10) {
-                        SearchField(state: state, palette: p)
+                        SearchField(state: state, palette: p, focused: $searchFocused)
                         Text(breadcrumb)
                             .font(.crate(10)).tracking(0.9)
                             .foregroundStyle(p.dim)
@@ -81,12 +102,16 @@ struct ContentView: View {
                     .padding(.vertical, 9)
                     Rectangle().fill(p.rule).frame(height: 1)
                     TrackListView(state: state, palette: p) { state.play($0) }
+                        // simultaneous so it still fires when a row handles the click
+                        .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
                 }
                 .background(p.ground)
             }
             PlayerBar(state: state, palette: p)
+                .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
         }
         .background(p.ground)
+        .background(ReleaseInitialFocus())
         .sheet(isPresented: $showingSettings) {
             SettingsView(state: state, palette: p)
         }

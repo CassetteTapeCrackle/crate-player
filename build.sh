@@ -28,6 +28,7 @@ mkdir -p "$MODULES"
 echo "Compiling CrateCore..."
 swiftc -O \
   -target arm64-apple-macos14.0 \
+  -swift-version 6 \
   -module-name CrateCore \
   -emit-module -emit-module-path "$MODULES/CrateCore.swiftmodule" \
   -emit-library -static -o "$MODULES/libCrateCore.a" \
@@ -36,6 +37,7 @@ swiftc -O \
 echo "Compiling CrateApp..."
 swiftc -O \
   -target arm64-apple-macos14.0 \
+  -swift-version 6 \
   -parse-as-library \
   -I "$MODULES" -L "$MODULES" -lCrateCore \
   $(find Sources/CrateApp -name '*.swift') \
