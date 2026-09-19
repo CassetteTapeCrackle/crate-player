@@ -207,6 +207,11 @@ final class AppState {
         if targets.count == 1,
            typed == (cell.field.value(in: rawFields(for: targets[0])) ?? "") { return }
 
+        // The selection has done its job; leaving it lit reads as a leftover rectangle
+        // on whichever cell was edited last.
+        selectedCells = []
+        anchor = nil
+
         let edit = TagEdit(cell.field, typed.isEmpty ? .cleared : .set(typed))
         Task { await write(edit, to: targets) }
     }
@@ -390,7 +395,16 @@ final class AppState {
 
     /// Playing anything makes its folder the queue, which is the rule search results
     /// follow too.
+    ///
+    /// Clicking the track that is already loaded never sends it back to the start. It
+    /// resumes if paused and otherwise does nothing, so double-clicking a field to fix
+    /// a tag on the track you are listening to does not interrupt it.
     func play(_ track: Track) {
+        if nowPlaying == track {
+            if !engine.isPlaying { engine.togglePause() }
+            publishNowPlaying()
+            return
+        }
         let folderTracks = (try? AudioFiles.tracks(in: track.folderURL)) ?? [track]
         let startIndex = folderTracks.firstIndex(of: track) ?? 0
         playQueue = PlayQueue(tracks: folderTracks, startAt: startIndex)
