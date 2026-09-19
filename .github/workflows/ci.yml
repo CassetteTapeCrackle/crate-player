@@ -21,6 +21,9 @@ jobs:
       - name: Now Playing artwork regression check
         run: ./Tools/check-nowplaying-artwork.sh
 
+      - name: Tag preservation regression check
+        run: ./Tools/check-tag-preservation.sh
+
       - name: Build the app bundle
         run: ./build.sh
 
