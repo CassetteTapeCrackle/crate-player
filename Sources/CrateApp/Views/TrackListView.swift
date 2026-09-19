@@ -1,10 +1,10 @@
+import AppKit
 import SwiftUI
 import CrateCore
 
 struct TrackListView: View {
     @Bindable var state: AppState
     let palette: Theme.Palette
-    let onPlay: (Track) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,6 +14,16 @@ struct TrackListView: View {
                 emptyState
             } else {
                 list
+            }
+            if let problem = state.writeProblem {
+                Rectangle().fill(palette.rule).frame(height: 1)
+                Text(problem)
+                    .font(.crate(10.5))
+                    .foregroundStyle(palette.accent)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
             }
         }
     }
@@ -35,23 +45,19 @@ struct TrackListView: View {
     }
 
     private var list: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(Array(state.listedTracks.enumerated()), id: \.element.id) { i, track in
-                    TrackRow(
-                        title: state.display(for: track).title,
-                        artist: state.display(for: track).artist,
-                        third: state.isSearching
-                            ? track.folderURL.lastPathComponent
-                            : state.display(for: track).album,
-                        time: timecode(state.duration(for: track)),
-                        index: i + 1,
-                        isPlaying: state.nowPlaying == track,
-                        palette: palette
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture(count: 2) { onPlay(track) }
+        // The stack is grown to at least the height of the viewport so the empty space
+        // under the last row is part of the content and can be clicked. A background
+        // behind the scroll view itself never receives the click.
+        GeometryReader { viewport in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(state.listedTracks.enumerated()), id: \.element.id) { i, track in
+                        TrackRow(state: state, track: track, index: i + 1, palette: palette)
+                    }
                 }
+                .frame(minHeight: viewport.size.height, alignment: .top)
+                // Behind the rows, so it only sees clicks that missed all of them.
+                .background(ClickCatcher { _, _ in state.deselectAll() })
             }
         }
     }
@@ -85,15 +91,17 @@ struct TrackListView: View {
 }
 
 private struct TrackRow: View {
-    let title: String
-    let artist: String
-    let third: String
-    let time: String
+    @Bindable var state: AppState
+    let track: Track
     let index: Int
-    let isPlaying: Bool
     let palette: Theme.Palette
 
+    @FocusState private var editing: Bool
+
+    private var isPlaying: Bool { state.nowPlaying == track }
+
     var body: some View {
+        let display = state.display(for: track)
         HStack(spacing: 12) {
             Group {
                 if isPlaying {
@@ -106,16 +114,19 @@ private struct TrackRow: View {
             }
             .frame(width: 34, alignment: .leading)
 
-            Text(title)
-                .foregroundStyle(isPlaying ? palette.accent : palette.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(artist)
-                .foregroundStyle(isPlaying ? palette.accent.opacity(0.7) : palette.dim)
-                .frame(width: 158, alignment: .leading)
-            Text(third)
-                .foregroundStyle(palette.dim)
-                .frame(width: 136, alignment: .leading)
-            Text(time)
+            cell(.title, display.title).frame(maxWidth: .infinity, alignment: .leading)
+            cell(.artist, display.artist).frame(width: 158, alignment: .leading)
+
+            // Searching puts the source folder in the third column, which is not a tag.
+            if state.isSearching {
+                Text(track.folderURL.lastPathComponent)
+                    .foregroundStyle(palette.dim)
+                    .frame(width: 136, alignment: .leading)
+            } else {
+                cell(.album, display.album).frame(width: 136, alignment: .leading)
+            }
+
+            Text(timecode(state.duration(for: track)))
                 .font(.crate(11))
                 .foregroundStyle(palette.faint)
                 .frame(width: 50, alignment: .trailing)
@@ -124,10 +135,44 @@ private struct TrackRow: View {
         .lineLimit(1)
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
-        .background(isPlaying ? palette.selection : Color.clear)
+        // Behind the cells, so it only sees clicks that missed every piece of text.
+        .background(ClickCatcher { _, modifiers in state.clickRow(track, modifiers: modifiers) })
         .overlay(alignment: .bottom) {
             Rectangle().fill(palette.rule.opacity(0.6)).frame(height: 1)
         }
+    }
+
+    /// One editable field. The click target and the selection highlight are both sized
+    /// to the glyphs, so double-clicking an artist means that artist rather than the
+    /// empty space beside it.
+    @ViewBuilder
+    private func cell(_ field: TagField, _ text: String) -> some View {
+        if state.editingCell == AppState.CellRef(url: track.url, field: field) {
+            TextField("", text: $state.editDraft)
+                .textFieldStyle(.plain)
+                .font(.crate(12))
+                .foregroundStyle(palette.ink)
+                .focused($editing)
+                .onAppear { editing = true }
+                .onSubmit { state.commitEdit() }
+                .onExitCommand { state.cancelEdit() }
+                .padding(.horizontal, 3)
+                .overlay(Rectangle().strokeBorder(palette.accent, lineWidth: 1))
+        } else {
+            Text(text)
+                .foregroundStyle(ink(field))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(state.isSelected(track, field) ? palette.selection : Color.clear)
+                .overlay(ClickCatcher { count, modifiers in
+                    state.clickCell(track, field, count: count, modifiers: modifiers)
+                })
+        }
+    }
+
+    private func ink(_ field: TagField) -> Color {
+        guard isPlaying else { return field == .title ? palette.ink : palette.dim }
+        return field == .title ? palette.accent : palette.accent.opacity(0.7)
     }
 }
 

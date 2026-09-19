@@ -105,7 +105,7 @@ struct ContentView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
                     Rectangle().fill(p.rule).frame(height: 1)
-                    TrackListView(state: state, palette: p) { state.play($0) }
+                    TrackListView(state: state, palette: p)
                         // simultaneous so it still fires when a row handles the click
                         .simultaneousGesture(TapGesture().onEnded { searchFocused = false })
                 }
