@@ -50,6 +50,7 @@ private struct FolderRow: View {
     @State private var expanded = false
 
     private var isSelected: Bool { state.selectedFolder?.url == node.url }
+    private var indent: CGFloat { CGFloat(12 + depth * 17) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -61,7 +62,6 @@ private struct FolderRow: View {
                         .font(.system(size: 8))
                         .frame(width: 11)
                         .foregroundStyle(isSelected ? palette.accent : palette.dim)
-                        .onTapGesture { expanded.toggle() }
                 }
                 Text(node.name)
                     .font(.crate(12))
@@ -75,10 +75,22 @@ private struct FolderRow: View {
                         .foregroundStyle(palette.faint)
                 }
             }
-            .padding(.leading, CGFloat(12 + depth * 17))
+            .padding(.leading, indent)
             .padding(.trailing, 12)
             .padding(.vertical, 4)
             .background(isSelected ? palette.selection : Color.clear)
+            .overlay(alignment: .leading) {
+                if !node.children.isEmpty {
+                    Button { expanded.toggle() } label: {
+                        Color.clear
+                            .frame(width: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, indent - 12)
+                    .accessibilityLabel(expanded ? "Collapse \(node.name)" : "Expand \(node.name)")
+                }
+            }
             .contentShape(Rectangle())
             .onTapGesture {
                 state.select(node)
